@@ -1,17 +1,17 @@
 import React, { Component } from "react";
-import { signup } from "../auth";
-import { Link } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
+import { signin, authenticate } from "../auth";
 import SocialLogin from "./SocialLogin";
 
-class Signup extends Component {
+class Signin extends Component {
     constructor() {
         super();
         this.state = {
-            name: "",
             email: "",
             password: "",
             error: "",
-            open: false,
+            redirectToReferer: false,
+            loading: false,
             recaptcha: false
         };
     }
@@ -55,43 +55,34 @@ class Signup extends Component {
 
     clickSubmit = event => {
         event.preventDefault();
-        const { name, email, password } = this.state;
+        this.setState({ loading: true });
+        const { email, password } = this.state;
         const user = {
-            name,
             email,
             password
         };
         // console.log(user);
         if (this.state.recaptcha) {
-            signup(user).then(data => {
-                if (data.error) this.setState({ error: data.error });
-                else
-                    this.setState({
-                        error: "",
-                        name: "",
-                        email: "",
-                        password: "",
-                        open: true
+            signin(user).then(data => {
+                if (data.error) {
+                    this.setState({ error: data.error, loading: false });
+                } else {
+                    // authenticate
+                    authenticate(data, () => {
+                        this.setState({ redirectToReferer: true });
                     });
+                }
             });
         } else {
             this.setState({
+                loading: false,
                 error: "What day is today? Please write a correct answer!"
             });
         }
     };
 
-    signupForm = (name, email, password, recaptcha) => (
+    signinForm = (email, password, recaptcha) => (
         <form>
-            <div className="form-group">
-                <label className="text-muted">Name</label>
-                <input
-                    onChange={this.handleChange("name")}
-                    type="text"
-                    className="form-control"
-                    value={name}
-                />
-            </div>
             <div className="form-group">
                 <label className="text-muted">Email</label>
                 <input
@@ -133,11 +124,22 @@ class Signup extends Component {
     );
 
     render() {
-        const { name, email, password, error, open, recaptcha } = this.state;
+        const {
+            email,
+            password,
+            error,
+            redirectToReferer,
+            loading,
+            recaptcha
+        } = this.state;
+
+        if (redirectToReferer) {
+            return <Redirect to="/" />;
+        }
+
         return (
             <div className="container">
-                <h2 className="mt-5 mb-5">Signup</h2>
-
+                <h2 className="mt-5 mb-5">SignIn</h2>
                 <hr />
                 <SocialLogin />
 
@@ -151,18 +153,28 @@ class Signup extends Component {
                     {error}
                 </div>
 
-                <div
-                    className="alert alert-info"
-                    style={{ display: open ? "" : "none" }}
-                >
-                    New account is successfully created. Please{" "}
-                    <Link to="/signin">Sign In</Link>.
-                </div>
+                {loading ? (
+                    <div className="jumbotron text-center">
+                        <h2>Loading...</h2>
+                    </div>
+                ) : (
+                    ""
+                )}
 
-                {this.signupForm(name, email, password, recaptcha)}
+                {this.signinForm(email, password, recaptcha)}
+
+                <p>
+                    <Link
+                        to="/forgot-password"
+                        className="btn btn-raised btn-danger"
+                    >
+                        {" "}
+                        Forgot Password
+                    </Link>
+                </p>
             </div>
         );
     }
 }
 
-export default Signup;
+export default Signin;

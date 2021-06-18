@@ -4,7 +4,7 @@ import MainRouter from "./MainRouter";
 
 const App = () => (
     <BrowserRouter>
-        <MainRouter /> //wrapping all routes in browserroute
+        <MainRouter />
     </BrowserRouter>
 );
 
